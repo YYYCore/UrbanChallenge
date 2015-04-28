@@ -26,7 +26,7 @@ public class PIDFollowerPrototype {
 		gear.forward();
 		
 
-		int commonValue = 1182;
+//		int commonValue = 1182;
 
 		double turn = 0;
 		double error = 0;
@@ -35,11 +35,11 @@ public class PIDFollowerPrototype {
 		double varP = 0.75;			
 		
 		double integral = 0;
-		double varI = 1;					// varI = 1.2*Kc*(dT)/OscPeriod	 ~~	6 or 4
+		double varI = 5;					// varI = 1.2*Kc*(dT)/OscPeriod	 ~~	6 or 4
 											// 		Kc = varP ?
 		double derivative = 0;				//nextError 
 		double lastError = 0;
-		double varD = 1;					//varD = 0.6*Kc*OscPeriod/8dT	~~ 1200 or 800
+		double varD = 1./2000.;					//varD = 0.6*Kc*OscPeriod/8dT	~~ 1200 or 800
 		
 		
 		while (!robot.isEscapeHit()) {
@@ -47,19 +47,24 @@ public class PIDFollowerPrototype {
 			double llsvalue = lls.getValue();
 			double rlsvalue = rls.getValue();
 			
-			if (llsvalue > variance * commonValue) {
-				error = llsvalue - rlsvalue;
-				if (error < 0) {
-					error = 0;
+			if (llsvalue > variance * rlsvalue) {
+				error = llsvalue - rlsvalue;			
+				if (error <= 0) {
+					error = 1;
 				}
+				
 				derivative = error - lastError;	
+				
+				if (derivative == 0) {
+					derivative = 1;
+				}
 				
 				turn = (varP * multiplier * (1/error))
 					+ (varI * (1/integral))
 					+ (varD * (1/derivative));
 				
 				integral += error;		
-				if (turn < 0.05) { 
+				if (turn < 0.05 || derivative > 15*error) { 
 					turn = 0.05;
 				}
 				gear.rightArc(turn);		
@@ -67,31 +72,40 @@ public class PIDFollowerPrototype {
 				
 //				System.out.println("test right - Error: " + error + " multiplier: " + multiplier + " Radius: " + turn);
 //				System.out.println("lls.getVal: " + llsvalue + " rls.getval" + rlsvalue + "v*c: " + variance*commonValue);
-				
-				System.out.println("Error: " + error + "Integral: " + integral + "Derivative: " + derivative);
-				
-				
-			} else if (rlsvalue > variance * commonValue) {
+//				System.out.println("Error: " + error + "Integral: " + integral + "Derivative: " + derivative);
+//				
+//				System.out.println("***** LEFT ***** TurnP:" + varP * multiplier * (1/error) + " Turn I: " + (varI * (1/integral)) + 
+//						" Turn D:" + varD * (1/derivative) + " Turn: " + turn + "\n");
+
+	
+			} else if (rlsvalue > variance * llsvalue) {
 				error = rlsvalue - llsvalue;
-				if (error < 0) {
-					error = 0;
+				if (error <= 0) {
+					error = 1;
 				}
 				derivative = error - lastError;
+				
+				if (derivative == 0) {
+					derivative = 1;
+				}
 				
 				turn = (varP * multiplier * (1/error))
 					+ (varI * (1/integral))
 					+ (varD * (1/derivative));
 				
 				integral += error;
-				if (turn < 0.05) { 
+				if (turn < 0.05 || derivative > 15*error ) { 
 					turn = 0.05;
 				}
+								
 				gear.leftArc(turn);
 				lastError = error;
+				
 //				System.out.println("test left - Error: " + error + " multiplier: " + multiplier +" Radius: " + turn);
 //				System.out.println("rls.getVal: " + rlsvalue  + " lls.getval" + llsvalue + "v*c: " + variance*commonValue);
-				System.out.println("Error: " + error + "Integral: " + integral + "Derivative: " + derivative);
-				
+//				System.out.println("Error: " + error + "Integral: " + integral + "Derivative: " + derivative);
+//				System.out.println("***** RIGHT ***** TurnP:" + varP * multiplier * (1/error) + " Turn I: " + (varI * (1/integral)) + 
+//						" Turn D:" + varD * (1/derivative) + " Turn: " + turn + \n");				
 			} else {
 				gear.forward();
 				integral = 0;
