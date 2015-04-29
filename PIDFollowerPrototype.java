@@ -26,12 +26,15 @@ public class PIDFollowerPrototype {
 		gear.forward();
 		
 
-//		int commonValue = 1182;
+		int commonValue = 1182;
+		commonValue = 1130;
+		commonValue = calibrate(rls.getValue(), lls.getValue());
 
 		double turn = 0;
+		String varTurn = "";
 		double error = 0;
 		double multiplier = (76);
-		double variance = 1.05;
+		double variance = 1.10;
 		double varP = 0.75;			
 		
 		double integral = 0;
@@ -39,7 +42,13 @@ public class PIDFollowerPrototype {
 											// 		Kc = varP ?
 		double derivative = 0;				//nextError 
 		double lastError = 0;
-		double varD = 1./2000.;					//varD = 0.6*Kc*OscPeriod/8dT	~~ 1200 or 800
+		double varD = 1./2000.;				//varD = 0.6*Kc*OscPeriod/8dT	~~ 1200 or 800
+		
+		boolean overshoot = false;
+		boolean overshootDone = false;
+		
+		varD = 0.0001;
+		varI = 20;
 		
 		
 		while (!robot.isEscapeHit()) {
@@ -48,7 +57,12 @@ public class PIDFollowerPrototype {
 			double rlsvalue = rls.getValue();
 			
 			if (llsvalue > variance * rlsvalue) {
-				error = llsvalue - rlsvalue;			
+				error = llsvalue - rlsvalue;	
+				
+
+//				if (rlsvalue < 500){
+//					overshoot = true;
+//				}
 				if (error <= 0) {
 					error = 1;
 				}
@@ -60,25 +74,32 @@ public class PIDFollowerPrototype {
 				}
 				
 				turn = (varP * multiplier * (1/error))
-					+ (varI * (1/integral))
-					+ (varD * (1/derivative));
+					- (varI * (1/integral))
+					+ (varD * (derivative));
 				
-				integral += error;		
-				if (turn < 0.05 || derivative > 15*error) { 
+				integral = 0.66*integral + error;		
+				if (turn < 0.05 || derivative > 10*error) { 
 					turn = 0.05;
 				}
-				gear.rightArc(turn);		
+				gear.rightArc(turn);	
+				varTurn = "RIGHT";
 				lastError = error;
 				
 //				System.out.println("test right - Error: " + error + " multiplier: " + multiplier + " Radius: " + turn);
 //				System.out.println("lls.getVal: " + llsvalue + " rls.getval" + rlsvalue + "v*c: " + variance*commonValue);
 //				System.out.println("Error: " + error + "Integral: " + integral + "Derivative: " + derivative);
 //				
-//				System.out.println("***** LEFT ***** TurnP:" + varP * multiplier * (1/error) + " Turn I: " + (varI * (1/integral)) + 
-//						" Turn D:" + varD * (1/derivative) + " Turn: " + turn + "\n");
+//				System.out.println("***** RIGHT ***** TurnP:" + varP * multiplier * (1/error) + " Turn I: " + (varI * (1/integral)) + 
+//						" Turn D:" + varD * (derivative) + " Turn: " + turn + "\n");
 
 	
 			} else if (rlsvalue > variance * llsvalue) {
+
+//				if (llsvalue < 500){
+//					overshoot = true;
+//				}
+				
+				
 				error = rlsvalue - llsvalue;
 				if (error <= 0) {
 					error = 1;
@@ -90,31 +111,60 @@ public class PIDFollowerPrototype {
 				}
 				
 				turn = (varP * multiplier * (1/error))
-					+ (varI * (1/integral))
-					+ (varD * (1/derivative));
+					- (varI * (1/integral))
+					+ (varD * (derivative));
 				
-				integral += error;
-				if (turn < 0.05 || derivative > 15*error ) { 
+//				integral += error;
+				integral = 0.66*integral + error;	
+				if (turn < 0.05 || derivative > 10*error ) { 
 					turn = 0.05;
 				}
 								
 				gear.leftArc(turn);
+				varTurn = "LEFT";
 				lastError = error;
 				
 //				System.out.println("test left - Error: " + error + " multiplier: " + multiplier +" Radius: " + turn);
 //				System.out.println("rls.getVal: " + rlsvalue  + " lls.getval" + llsvalue + "v*c: " + variance*commonValue);
 //				System.out.println("Error: " + error + "Integral: " + integral + "Derivative: " + derivative);
-//				System.out.println("***** RIGHT ***** TurnP:" + varP * multiplier * (1/error) + " Turn I: " + (varI * (1/integral)) + 
-//						" Turn D:" + varD * (1/derivative) + " Turn: " + turn + \n");				
+//				System.out.println("***** LEFT ***** TurnP:" + varP * multiplier * (1/error) + " Turn I: " + (varI * (1/integral)) + 
+//						" Turn D:" + varD * (derivative) + " Turn: " + turn + "\n");
 			} else {
-				gear.forward();
-				integral = 0;
+//					while (overshoot){
+//						if(varTurn == "RIGHT"){
+//							System.out.println("OVERSHOOT RIGHT TURN");
+//							gear.rightArc(0.05);
+//						} else if (varTurn == "LEFT"){
+//							System.out.println("OVERSHOOT RIGHT TURN");
+//							gear.leftArc(0.05);
+//						}
+//						if (lls.getValue() < 0.8* commonValue || rls.getValue() < 0.8*commonValue) {
+//							overshootDone = true;
+//						}
+//						if (Math.abs(lls.getValue() - rls.getValue()) < 200 && overshootDone) {
+//							System.out.println("OVERSHOOT DONE!!!!!!!!!!!!!" + Math.abs(lls.getValue() - rls.getValue()));
+//							overshoot = false;
+//							overshootDone = false;
+//						}
+//					}			
+				
+//					if (overshoot) {
+//						if(varTurn == "RIGHT"){
+//							gear.rightArc(0.05);
+//						} else if (varTurn == "LEFT"){
+//							gear.leftArc(0.05);
+//						}						
+//					} else{
+						gear.forward();
+						integral = 0;
+//					}
+					
 			}			
 		}
 	}
 	
 	public static int calibrate(int ls1value, int ls2value){
-		System.out.println("ASDF: " + (ls1value + ls2value) / 2);
+		System.out.println("commonValue: " + (ls1value + ls2value) / 2);
 		 return Math.round((ls1value + ls2value) / 2);
 	}
 	
