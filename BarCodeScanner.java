@@ -1,14 +1,9 @@
-// http://www.inpharmix.com/jps/PID_Controller_For_Lego_Mindstorms_Robots.html
-
-
-
-import java.awt.Color;
-
 import ch.aplu.ev3.ColorLabel;
 import ch.aplu.ev3.ColorSensor;
 import ch.aplu.ev3.Gear;
 import ch.aplu.ev3.LegoRobot;
 import ch.aplu.ev3.SensorPort;
+
 
 public class BarCodeScanner {	
 	public BarCodeScanner() {
@@ -30,6 +25,7 @@ public class BarCodeScanner {
 		
 		String[] colorArray = new String[15];
 		double[] timeArray = new double[colorArray.length];
+		String[] codeArray = new String[timeArray.length];
 		
 		
 		while (!robot.isEscapeHit()) {
@@ -42,16 +38,13 @@ public class BarCodeScanner {
 			
 			
 			if (getColor(cls.getColorStr(), cls.getColorLabel()) == "RED"){	
-				scanning = true;
-				double time = 0;
 				
+				scanning = true;
+				double time = 0;				
 				int count = 0;
 				
 			
-				
-				double startTime = 0;
-				double test = 0;
-				double ccc = 0;
+				double starttime;
 				
 				
 				while (scanning){
@@ -60,63 +53,38 @@ public class BarCodeScanner {
 						if ((count == 0) || (colorArray[count-1] != color)){
 							colorArray[count] = color;							
 							if (count != 0){
-								System.out.println(gear.getLeftMotorCount() - ccc);
-
-								timeArray[count -1] = getCount(color, gear.getLeftMotorCount() ,time);
-								
-								
+								timeArray[count-1] = getCount(colorArray[count-1], gear.getLeftMotorCount() ,time);
+//								System.out.println(" t: " + (gear.getLeftMotorCount() -time) + timeArray[count-1]);							
 							}	
-							ccc = gear.getLeftMotorCount();
+							starttime = gear.getLeftMotorCount();
 							time = gear.getLeftMotorCount();
 							count++;
 						}		
 					} else if (color == "RED" && count != 0) {	
-						
-						timeArray[count -1] = getCount(colorArray[count-1], gear.getLeftMotorCount() ,time);
-						
-						for (int a = 0; a < timeArray.length -1; a++){
-							if (timeArray[a] == 2){
-								for (int b = colorArray.length-1; b >= 1; b--) {
-									if (colorArray[b-1] == null){
-										
-									}
-									colorArray[b] = colorArray[b-1];
-								}
-								colorArray[a] = colorArray[a+1];															
-//							} else if (timeArray[a] == 3){
-//								for (int b = colorArray.length-1; b > a; b--) {
-//									if (colorArray[b-1] == null){
-//										
-//									}
-//									colorArray[b] = colorArray[b-1];
-//								}
-//								timeArray[a] = 2;
-//							}			
+						System.out.println("END");
+						timeArray[count -1] = getCount(colorArray[count-1], gear.getLeftMotorCount() ,time);						
+						int c = 0;						
+						for (int a = 0; a < colorArray.length; a++) {
+							for (int b = 0; b < timeArray[a]; b++) {
+//									System.out.println("color: " + colorArray[a] + " count: " + timeArray[a] + " t: " + ) );
+									codeArray[c] = colorArray[a];
+									c++;
 							}
-						}			
-						for (int i = 0; i < colorArray.length; i++){
-//							System.out.println(colorArray[i]);
-							System.out.println(colorArray[i] + "  " + timeArray[i]);
-							test += timeArray[i];
-							
+						}												
+						for (int i = 0; i < codeArray.length; i++){
+							if (codeArray[i] != null){
+								System.out.println(codeArray[i]);
+							}
 						}	
-
 						gear.setSpeed(0);
 						gear.forward();
 						scanning = false;
 					}
 				}	
-				double endTime = System.currentTimeMillis();
-			}
-			
-			
-			
-			
-			
-			
-			
+			}	
 		}
 	}
+	
 	
 	
 	public int getCount(String color, double motorCount, double lastCount){
