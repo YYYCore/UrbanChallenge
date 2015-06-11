@@ -9,10 +9,10 @@ import ch.aplu.ev3.SensorPort;
 
 
 
-public class BarCodeScanner {	
+public class BCScanner {	
 	
 	
-	public BarCodeScanner() {
+	public BCScanner() {
 		
 		
 		LegoRobot robot = new LegoRobot("192.168.11.31");	
@@ -36,7 +36,7 @@ public class BarCodeScanner {
 		
 		final Gear gear = new Gear();
 		robot.addPart(gear);
-		final int speed = 15;
+		final int speed = 20;
 		gear.setSpeed(speed);
 		gear.forward();
 	
@@ -80,7 +80,6 @@ public class BarCodeScanner {
 		int wantedCount = 31;
 		int motorCount = 0;
 		int lightCount = 0;
-		double factor = 1.1;
 		gear.resetLeftMotorCount();
 		int[][] valueArray = new int[1000][2];
 		
@@ -97,52 +96,58 @@ public class BarCodeScanner {
 //			System.out.println("MotorCount: " + motorCount + " lightcount: " + lightCount + " count: " + count + " i: " + i);
 			
 			if (count == 0) {
-				if (lightCount <= 400) {
-					colorArray = writeBlack(colorArray, count);
+				if (lightCount <= 600) {
+					writing(lightCount, colorArray, count, gear, wantedCount, motorCount, maxDigits);
 					i = 0;
 					count++;
-					gear.resetLeftMotorCount();
 				}
-			} else if (motorCount >= wantedCount+10 && count != 0) {	
-				if (count == maxDigits) {
-					System.out.println("Max digits reached." + maxDigits);
-					gear.stop();
+			}
+		
+			
+			else if (motorCount >= wantedCount && count != 0) {
+				for (int c = 0; c < i; c++){
+					if (valueArray[i-c][0] <= wantedCount) {
+						motorCount = valueArray[i-c][0];
+						lightCount = valueArray[i-c][1];
+						colorArray = writing(lightCount, colorArray, count, gear, wantedCount, motorCount, maxDigits);
+						count++;
+						if (count > 1) {
+							wantedCount = 30 - (motorCount - wantedCount);
+						}
+						i = 0;
+					
+						break;	
+						}
+		
 				}
-				System.out.println("i: " + i + " count : " + count + "array i-2: " + valueArray[i-2][1] + 
-						" array i: " + valueArray[i][1] + " motorcount " + motorCount );
-				if (valueArray[Math.round(i/2)][1] > factor * valueArray[i][1]) {
-					colorArray = writeBlack(colorArray, count);
-					count++;
-				} else if (valueArray[i][1] > factor * valueArray[Math.round(i/2)][1]){
-					colorArray = writeWhite(colorArray, count);
-					count++;	
-				}		
-				if (count > 1) {
-					wantedCount = 30 - (motorCount - wantedCount);
-				}	
-				gear.resetLeftMotorCount();
-				i = 0;
-				
-				
-			}	
+			}
+			
 			i++;			
 		}
 		
 	}
 	
-	public static color[] writeBlack(color[] colorArray, int count){
-		System.out.println("black");
-		colorArray[count] = color.black;
+	public static color[] writing(int lightCount, color[] colorArray, int count, Gear gear, int wantedCount, int motorCount, int maxDigits){
+		
+		if (lightCount < 600) {
+			colorArray[count] = color.black;
+			System.out.println("black " + "motorcount: " + motorCount + " wantedcount: " + wantedCount + " light: " + lightCount);
+			count++;
+			gear.resetLeftMotorCount();	
+
+		} else if (lightCount >= 600 && count != 0) {
+			colorArray[count] = color.white;
+			count++;
+			System.out.println("white " + "motorcount: " + motorCount + " wantedcount: " + wantedCount + " light: " + lightCount);
+			gear.resetLeftMotorCount();	
+
+		}
+		if (count == maxDigits) {
+			System.out.println("Max digits reached." + maxDigits);
+			gear.stop();
+		}
 		return colorArray;
 	}
-	
-	public static color[] writeWhite(color[] colorArray, int count){
-		System.out.println("white");
-		colorArray[count] = color.white;
-		return colorArray;
-	}
-	
-	
 	
 	public static int getValue(LightSensor lls, LightSensor rls){		
 		return ((lls.getValue() + rls.getValue()) / 2);	
@@ -156,7 +161,7 @@ public class BarCodeScanner {
 	
 	public static void main(String[] args) {
 		try{
-			new BarCodeScanner();	
+			new BCScanner();	
 		} catch (Exception e){
 			e.printStackTrace();
 		}
