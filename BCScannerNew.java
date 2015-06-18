@@ -8,21 +8,19 @@ import ch.aplu.ev3.Sensor;
 import ch.aplu.ev3.SensorPort;
 
 
-
 public class BCScannerNew {	
 	
 	
 	public static int index = 0;
-	public static color[] colorArray = new color[10];
+	public static color[] colorArray = new color[12];
 	public static color lastColor = null;
+	public static int counter = 0;
+	public static int maxDigits = 10;
+	
 	
 	public BCScannerNew() {
-		
-		
+			
 		LegoRobot robot = new LegoRobot("192.168.11.31");	
-		
-
-
 		
 		final ColorSensor cls = new ColorSensor(SensorPort.S4);
 		final LightSensor lls = new LightSensor(SensorPort.S1);
@@ -40,15 +38,19 @@ public class BCScannerNew {
 		
 		final Gear gear = new Gear();
 		robot.addPart(gear);
-		final int speed = 15;
+		final int speed = 30;
 		gear.setSpeed(speed);
 		gear.forward();
 	
-		robot.setVolume(5);
+	
 		
-		
+		System.out.println("Battery: " + robot.getBatteryLevel());
+
 		
 		start(robot, cls, gear, lls, rls);
+		
+		System.out.println("Code: " + translate(colorArray));
+		
 		
 		robot.exit();
 		
@@ -61,9 +63,7 @@ public class BCScannerNew {
 	public static void start(LegoRobot robot, ColorSensor cls, Gear gear, LightSensor lls, LightSensor rls){
 		
 		
-		int maxDigits = 10;
-		color[] colorArray = new color[maxDigits];
-		color[] result = new color[maxDigits];
+		
 	
 		while (!robot.isEscapeHit()) {
 			
@@ -72,7 +72,8 @@ public class BCScannerNew {
 				lastColor = color.red;
 				gear.resetLeftMotorCount();
 				
-				result = startScan(lls, rls, gear, colorArray, maxDigits );
+				startScan(lls, rls, gear, colorArray, maxDigits );
+				
 				System.out.println("----------------------------------");
 				
 				for (int c = 0; c < maxDigits; c++) {
@@ -87,11 +88,11 @@ public class BCScannerNew {
 		}
 	}
 	
-	public static color[] startScan(LightSensor lls, LightSensor rls, Gear gear, color[] colorArray, int maxDigits){
+	public static void startScan(LightSensor lls, LightSensor rls, Gear gear, color[] colorArray, int maxDigits){
 		
-		int motorCount = 0;
+		double motorCount = 0;
 		int lightCount = 0;
-		int counter = 0;
+		int expectedValue  = 600;
 		
 		
 		while(true){
@@ -102,17 +103,21 @@ public class BCScannerNew {
 			if (counter == maxDigits) {
 				gear.stop();
 				System.out.println("Max Digits reached: " + maxDigits);
+				break;
 			} else 
-				if (lightCount < 550 && (lastColor == color.red || lastColor == color.white)) {
+				if (lightCount < expectedValue && (lastColor == color.red || lastColor == color.white)) {
+					if (lastColor == color.red){
+						motorCount = 0;
+					}
 					setNewColor(color.black, motorCount);
 					lastColor = color.black;
-					counter++;
 					gear.resetLeftMotorCount();
-				} else if (lightCount >= 550 && lastColor == color.black) {
+//					expectedValue = lightCount;
+				} else if (lightCount >= expectedValue  && lastColor == color.black) {
 					setNewColor(color.white, motorCount);
 					lastColor = color.white;
-					counter++;
 					gear.resetLeftMotorCount();
+//					expectedValue = lightCount;
 				}
 			
 			
@@ -121,14 +126,31 @@ public class BCScannerNew {
 		
 	}
 	
-	public static void setNewColor(color color, int motorCount){
-		int count = Math.round(motorCount/30);
+	public static void setNewColor(color color, double motorCount){
 		
-		for (int i = count; i > 0; i--){
-			colorArray[index] = color;
-			index++;
+		long count = Math.round(motorCount/25.);
+		
+		
+		
+		if (count < 1) {
+			count = 1;
 		}
 		
+		System.out.println("color: " + lastColor + " count: " + count + " motorcount: " + motorCount);
+
+		if (lastColor != color.red) {
+			
+			if (index + count > maxDigits){
+				count = maxDigits - index;
+			}
+			
+			for (long i = count; i > 0; i--){							
+				
+				colorArray[index] = lastColor;
+				index++;
+				counter++;
+			}
+		}
 	}
 	
 	public static int getValue(LightSensor lls, LightSensor rls){		
@@ -138,6 +160,23 @@ public class BCScannerNew {
 
 	public static boolean isRed(ColorSensor cls){
 		return (cls.getColorStr() == "RED") || cls.getColorID() == 5 || cls.getColorLabel().toString().equals("RED");		
+	}
+	
+	public static String translate (color[] colorArray){
+		
+		String s = "";
+		
+		for (int i = 0; i < colorArray.length ; i++){
+			if (colorArray[i] == color.black) {
+				s += "1";
+			} else if (colorArray[i] == color.white) {
+				s += "0";
+			}
+		}
+		
+		
+		
+		return s;
 	}
 	
 	
