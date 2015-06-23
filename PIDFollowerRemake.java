@@ -11,11 +11,11 @@ import ch.aplu.ev3.SensorPort;
 
 public class PIDFollowerRemake {
 //	private static final
-	public static final double VARIANCE = 1.03;
+	public static final double VARIANCE = 1.05;
 	public static final double CONST_P = 57;	//57
 	public static final double CONST_I = 5;					// varI = 1.2*Kc*(dT)/OscPeriod	 ~~	6 or 4
 	public static final double CONST_D = 0.0002;			//1./2000.		//varD = 0.6*Kc*OscPeriod/8dT	~~ 1200 or 800
-	public static final double MAX_TURN = 0.06;
+	public static final double MAX_TURN = 0.1;
 //	public static final double UNDERGROUND = 1150;
 	
 	public direction direct = direction.forward;
@@ -31,6 +31,7 @@ public class PIDFollowerRemake {
 	private FollowerData data;
 
 	public PIDFollowerRemake() {
+		
 		data = new FollowerData();
 		robot = new LegoRobot("192.168.11.31");		
 		
@@ -42,7 +43,7 @@ public class PIDFollowerRemake {
 		rls.activate(true);
 		gear = new Gear();
 		robot.addPart(gear);
-		final int speed = 20;
+		final int speed = 25;
 		gear.setSpeed(speed);
 		gear.forward();
 		
@@ -58,7 +59,7 @@ public class PIDFollowerRemake {
 		while (!robot.isEscapeHit()) {
 			llsvalue = getAvgValue(lls);
 			rlsvalue = getAvgValue(rls);
-			System.out.println("lls: " + llsvalue + " rls: " + rlsvalue + " direction: " + direct);
+			System.out.println("lls: " + llsvalue + " rls: " + rlsvalue + " direction: " + direct + " turn: " + data.getTurn());
 			if (llsvalue > 400 && llsvalue < 1000 && rlsvalue > 400 && rlsvalue < 1000){
 				direct = direction.forward;
 			}
@@ -87,7 +88,7 @@ public class PIDFollowerRemake {
 			System.out.println("test1");
 			while(true){
 				gear.rightArc(MAX_TURN);
-				gear.rightArc(0.05);		//wenn MAX_TURN auf 0.05 geändert wird, muss hier 0.06 hin
+				gear.rightArc(0.1);		//wenn MAX_TURN auf 0.05 geändert wird, muss hier 0.06 hin
 					System.out.println("OVERSHOOT RIGHT TURN");
 				
 				if (getAvgValue(lls) < 800) {
@@ -101,7 +102,7 @@ public class PIDFollowerRemake {
 			System.out.println("test2");
 			while(true) {
 				gear.leftArc(MAX_TURN);
-				gear.leftArc(0.05);
+				gear.leftArc(0.1);
 				System.out.println("OVERSHOOT LEFT TURN");
 				
 				if (getAvgValue(rls) < 800) {
@@ -210,12 +211,15 @@ public class PIDFollowerRemake {
 			- (CONST_I * (1/data.getIntegral()))
 			+ (CONST_D * (data.getDerivative()));
 			
-			if (turn < MAX_TURN || data.getDerivative()> 15*data.getError()) { 
+//			if (turn < MAX_TURN || data.getDerivative()> 20*data.getError()) { 
+//				turn = MAX_TURN;
+//			}
+
+			System.out.println((CONST_P * (1/data.getError())) + "---" + (CONST_I * (1/data.getIntegral())) + "----" + (CONST_D * (data.getDerivative())));
+			System.out.println(turn);
+			if (turn < MAX_TURN) { 
 				turn = MAX_TURN;
 			}
-//			System.out.println((CONST_P * (1/data.getError())) + "---" + (CONST_I * (1/data.getIntegral())) + "----" + (CONST_D * (data.getDerivative())));
-			
-			
 //			System.out.println("turn: " + turn);
 			return turn;
 		}

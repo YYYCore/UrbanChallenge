@@ -105,7 +105,7 @@ public class BarCodeScanner {
 				}
 			} else if (motorCount >= wantedCount+10 && count != 0) {	
 				if (count == maxDigits) {
-					System.out.println("Max digits reached." + maxDigits);
+					System.out.println("Max digits reached: " + maxDigits);
 					gear.stop();
 				}
 				System.out.println("i: " + i + " count : " + count + "array i-2: " + valueArray[i-2][1] + 

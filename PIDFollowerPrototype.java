@@ -170,7 +170,7 @@ public class PIDFollowerPrototype {
 	
 	public static void main(String[] args) {
 		try{
-			new PIDFollowerPrototype();	
+			new PIDFollowerRemake();	
 		} catch (Exception e){
 			e.printStackTrace();
 		}
